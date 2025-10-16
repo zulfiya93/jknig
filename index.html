@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="ru" class="h-full">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Портфолио педагога</title>
+    <meta name="description" content="Портфолио педагога — результаты, достижения, разработки, документы." />
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Tailwind dark mode via 'class'
+      tailwind.config = { darkMode: 'class' }
+      // Persist dark mode
+      (function() {
+        try {
+          var theme = localStorage.getItem('theme') || 'light';
+          if (theme === 'dark') document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      .container { max-width: 80rem; margin: 0 auto; padding-left: 1rem; padding-right: 1rem; }
+      .badge { @apply px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-800 border; }
+    </style>
+    <!-- React / ReactDOM / React Router DOM UMD -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.production.min.js"></script>
+    <!-- Babel for in-browser JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 min-h-full">
+    <div id="root"></div>
+
+    <script type="text/babel">
+
+const { useState, useEffect, useMemo } = React;
+const { HashRouter, Routes, Route, NavLink } = ReactRouterDOM;
+
+// ----- i18n -----
+const dict = {
+  ru: {
+    headerSubtitle: "Портфолио педагога",
+    nav: { home:"Главная", about:"Обо мне", achievements:"Достижения", students:"Достижения студентов", projects:"Разработки", documents:"Документы", media:"Медиа", publications:"Публикации", reviews:"Отзывы", grants:"Гранты", press:"Пресса", contacts:"Контакты" },
+    theme: { light:"Светлая", dark:"Тёмная" },
+    footer: { rights:"Все права защищены.", tech:"Сайт без сборки: React + Tailwind (CDN)" },
+    home: { welcome:"Добро пожаловать", subtitle:"Портфолио педагога — результаты, разработки, достижения", btnAchievements:"Достижения", btnProjects:"Разработки", btnDocuments:"Документы" },
+    contacts: { title:"Контакты", subtitle:"Связаться со мной", details:"Контактные данные", formTitle:"Форма обратной связи", name:"Ваше имя", email:"Ваш email", message:"Сообщение", send:"Отправить", sent:"Сообщение отправлено!", error:"Ошибка отправки. Попробуйте ещё раз.", privacy:"Отправляя форму, вы соглашаетесь с обработкой персональных данных." },
+    publicationsTitle:"Публикации", publicationsSub:"Статьи, методические материалы в изданиях",
+    reviewsTitle:"Отзывы", reviewsSub:"Коллеги, студенты, партнёры",
+    grantsTitle:"Гранты", grantsSub:"Выигранные гранты и проекты",
+    pressTitle:"Пресса", pressSub:"СМИ о педагоге и студентах",
+    mediaTitle:"Медиа", mediaSub:"Фото и видео материалы",
+    docsTitle:"Документы", docsSub:"Методички, сертификаты, публикации — быстрые ссылки",
+    projectsTitle:"Разработки и методические материалы", projectsSub:"Фильтры и поиск по работам",
+    aboutTitle:"Обо мне", aboutSub:"Биография, опыт, миссия",
+    achTitle:"Достижения", achSub:"Таймлайн результатов и наград",
+    studentsTitle:"Достижения студентов", studentsSub:"Конкурсы, проекты, победы",
+    categories: { all:"Все", methods:"Методички", dev:"Разработки" },
+    searchPlaceholder: "Поиск по проектам...",
+  },
+  kz: {
+    headerSubtitle: "Педагог портфолиосы",
+    nav: { home:"Басты бет", about:"Мен туралы", achievements:"Жетістіктер", students:"Студент жетістіктері", projects:"Жобалар", documents:"Құжаттар", media:"Медиа", publications:"Публикациялар", reviews:"Пікірлер", grants:"Гранттар", press:"БАҚ", contacts:"Байланыс" },
+    theme: { light:"Жарық", dark:"Қараңғы" },
+    footer: { rights:"Барлық құқықтар қорғалған.", tech:"Құрастырусыз сайт: React + Tailwind (CDN)" },
+    home: { welcome:"Қош келдіңіз", subtitle:"Педагог портфолиосы — нәтижелер, жобалар, жетістіктер", btnAchievements:"Жетістіктер", btnProjects:"Жобалар", btnDocuments:"Құжаттар" },
+    contacts: { title:"Байланыс", subtitle:"Менмен байланысу", details:"Байланыс деректері", formTitle:"Кері байланыс формасы", name:"Атыңыз", email:"Эл. пошта", message:"Хабарлама", send:"Жіберу", sent:"Хабарлама жіберілді!", error:"Жіберу қатесі. Қайта көріңіз.", privacy:"Форманы жіберу арқылы дербес деректерді өңдеуге келісесіз." },
+    publicationsTitle:"Публикациялар", publicationsSub:"Мақалалар мен әдістемелік материалдар",
+    reviewsTitle:"Пікірлер", reviewsSub:"Әріптестер, студенттер, серіктестер",
+    grantsTitle:"Гранттар", grantsSub:"Жеңіп алынған гранттар",
+    pressTitle:"БАҚ", pressSub:"СМИ материалдары",
+    mediaTitle:"Медиа", mediaSub:"Фото және видео",
+    docsTitle:"Құжаттар", docsSub:"Әдістемелік материалдар, сертификаттар, жарияланымдар",
+    projectsTitle:"Жобалар мен әдістемелік материалдар", projectsSub:"Іздеу және сүзгілер",
+    aboutTitle:"Мен туралы", aboutSub:"Өмірбаян, тәжірибе, миссия",
+    achTitle:"Жетістіктер", achSub:"Нәтижелер мен марапаттар",
+    studentsTitle:"Студент жетістіктері", studentsSub:"Байқаулар, жобалар, жеңістер",
+    categories: { all:"Барлығы", methods:"Әдістем.", dev:"Жобалар" },
+    searchPlaceholder: "Жобалар бойынша іздеу...",
+  }
+};
+
+function useI18n() {
+  const [lang, setLang] = useState(localStorage.getItem('lang') || 'ru');
+  useEffect(()=> { localStorage.setItem('lang', lang) }, [lang]);
+  const t = (path) => path.split('.').reduce((acc, k)=> acc && acc[k], dict[lang]);
+  return { t, lang, setLang };
+}
+
+// ----- Data (демо, замените на свои) -----
+const profile = {
+  name: "Исагалиева Зульфия Асхатқызы",
+  title: "Преподаватель ИТ / Методист",
+  location: "Казахстан, Маңғыстау",
+  email: "zulfiya@example.com",
+  phone: "+7 700 000 00 00",
+  photoUrl: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=800&auto=format&fit=crop",
+  about: "Педагог с 10+ годами опыта. Ментор WorldSkills/TurkicSkills. Разрабатываю учебные программы по C#, SQL, ИИ, цифровой грамотности. Интересы: EdTech, генеративный ИИ, цифровая трансформация колледжа.",
+  tags: ["ИТ-педагог","Методист","WorldSkills","EdTech","AI"],
+  socials: [
+    { label: "LinkedIn", url: "#" },
+    { label: "GitHub", url: "#" },
+    { label: "YouTube", url: "#" },
+  ],
+};
+
+const achievements = [
+  { year: 2025, title: "Главный эксперт регионального чемпионата ITSSB", desc: "Организация площадки, разработка ведомостей, обучение экспертов.", links:[{label:"Отчёт (PDF)", url:"#"}]},
+  { year: 2024, title: "Победа студента в IT Solutions for Business", desc: "1 место; проект CRM для колледжа (C# + SQL).", links:[{label:"Видео", url:"#"}]},
+  { year: 2023, title: "Сертификат педагога-исследователя", desc: "Методика смешанного обучения (SAMR + LLM).", links:[]},
+];
+
+const students = [
+  { year: 2025, name: "Али Бектур", result: "1 место, TurkicSkills — ITSSB", proof: "#" },
+  { year: 2024, name: "Айнур С.", result: "Призёр регионального хакатона", proof: "#" },
+];
+
+const projects = [
+  { id:1, cat:"Методички", title:'Рабочая программа: "Жасанды интеллект негіздері" (36 сағ)', desc:"Содержание курса, цели, оценивание.", link:"#"},
+  { id:2, cat:"Разработки", title:"Мобильное приложение библиотеки", desc:"React Native + Firebase, учёт книг.", link:"#"},
+  { id:3, cat:"Разработки", title:"CRM для колледжа", desc:"C#/.NET + SQL, учёт проектов и портфолио.", link:"#"},
+];
+
+const documents = [
+  { id:101, type:"Силлабус", title:"Силлабус C#/.NET (2025)", url:"#"},
+  { id:102, type:"Сертификат", title:"Педагог-исследователь", url:"#"},
+  { id:103, type:"Публикация", title:"Статья: EdTech и ИИ в колледже", url:"#"},
+];
+
+const media = [
+  { id:1, kind:"Видео", title:"Видеоурок: Основы SQL", thumb:"https://images.unsplash.com/photo-1518779578993-ec3579fee39f?q=80&w=600&auto=format&fit=crop", url:"https://www.youtube.com/" },
+  { id:2, kind:"Фото", title:"Фоторепортаж: Хакатон", thumb:"https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=600&auto=format&fit=crop", url:"#"},
+];
+
+const publications = [
+  { id:1, year:2025, title:"Статья: Цифровая педагогика и ИИ", link:"#", outlet:"Педагогика.kz"},
+  { id:2, year:2024, title:"Методика blended learning в колледже", link:"#", outlet:"EdTech Journal"},
+];
+
+const reviews = [
+  { id:1, author:"Директор колледжа", text:"Высокий профессионализм и системные результаты студентов."},
+  { id:2, author:"Студент выпускник", text:"Благодаря занятиям выиграл хакатон и устроился в IT-компанию."},
+];
+
+const grants = [
+  { id:1, year:2024, title:"Грант на лабораторию ИИ", desc:"Оборудование для практикума по ML/DL.", link:"#"},
+  { id:2, year:2023, title:"Мини-грант на EdTech-платформу", desc:"Внедрение LMS и аналитики успеваемости.", link:"#"},
+];
+
+const press = [
+  { id:1, title:"Интервью о цифровой трансформации колледжа", outlet:"24.kz", link:"#"},
+  { id:2, title:"Материал о проектах студентов", outlet:"Tengrinews", link:"#"},
+];
+
+// ----- UI helpers -----
+const Badge = ({children}) => <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-800 border">{children}</span>;
+
+const Section = ({title, subtitle, children}) => (
+  <section className="container py-8">
+    <div className="mb-4">
+      <h2 className="text-2xl font-semibold">{title}</h2>
+      {subtitle && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{subtitle}</p>}
+    </div>
+    {children}
+  </section>
+);
+
+function Timeline({ items }){
+  return (
+    <div className="relative">
+      <div className="absolute left-3 top-0 bottom-0 w-px bg-gray-200" />
+      <ol className="space-y-6">
+        {items.map((a, idx) => (
+          <li key={idx} className="pl-10 relative">
+            <span className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-white dark:bg-gray-900 border flex items-center justify-center text-xs font-semibold">
+              {a.year.toString().slice(-2)}
+            </span>
+            <div className="p-4 border rounded-xl hover:shadow-sm transition">
+              <div className="flex items-center gap-3">
+                <h3 className="font-semibold">{a.title}</h3>
+                <Badge>{a.year}</Badge>
+              </div>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{a.desc}</p>
+              {a.links?.length>0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {a.links.map((l,i)=>(<a key={i} className="text-sm text-blue-600 hover:underline" href={l.url} target="_blank" rel="noreferrer">{l.label}</a>))}
+                </div>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+// ----- Pages -----
+function Home({ t }){
+  return (
+    <>
+      <Section title={t('home.welcome')} subtitle={t('home.subtitle')}>
+        <div className="grid md:grid-cols-2 gap-6 items-center">
+          <img src={profile.photoUrl} alt={profile.name} className="w-full h-72 object-cover rounded-2xl border"/>
+          <div>
+            <h3 className="text-xl font-semibold">{profile.name}</h3>
+            <p className="text-gray-700 dark:text-gray-300 mt-2">{profile.title} · {profile.location}</p>
+            <p className="mt-3 leading-relaxed">{profile.about}</p>
+            <div className="mt-4 flex gap-2 flex-wrap">
+              {profile.tags.map(tg => <Badge key={tg}>{tg}</Badge>)}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <a className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border bg-blue-600 text-white border-blue-600 hover:bg-blue-700" href="#/achievements">{t('home.btnAchievements')}</a>
+              <a className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border" href="#/projects">{t('home.btnProjects')}</a>
+              <a className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border" href="#/documents">{t('home.btnDocuments')}</a>
+            </div>
+          </div>
+        </div>
+      </Section>
+    </>
+  );
+}
+
+function About({ t }){
+  return (
+    <Section title={t('aboutTitle')} subtitle={t('aboutSub')}>
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <img src={profile.photoUrl} className="w-full h-64 object-cover rounded-2xl border"/>
+          <div className="mt-3 text-sm space-y-1">
+            <p>📍 {profile.location}</p>
+            <p>✉️ <a className="text-blue-600" href={'mailto:'+profile.email}>{profile.email}</a></p>
+            <p>☎️ <a className="text-blue-600" href={'tel:'+profile.phone}>{profile.phone}</a></p>
+          </div>
+        </div>
+        <div className="md:col-span-2 space-y-4">
+          <p>Опыт: 10+ лет преподавания ИТ-дисциплин. Ментор чемпионатов WorldSkills/TurkicSkills. Организатор хакатонов, автор учебных программ.</p>
+          <p>Педагогическая миссия: развивать у студентов критическое мышление, цифровую культуру и инженерное мышление.</p>
+          <p>Интересы: EdTech, генеративный ИИ (ChatGPT, Suno, Veo3), автоматизация учебного процесса, цифровая трансформация колледжа.</p>
+          <div className="flex gap-2 flex-wrap">
+            {profile.socials.map(s => <a key={s.label} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border" href={s.url} target="_blank" rel="noreferrer">{s.label}</a>)}
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+function Achievements({ t }){
+  return (
+    <Section title={t('achTitle')} subtitle={t('achSub')}>
+      <Timeline items={achievements} />
+    </Section>
+  );
+}
+
+function Students({ t }){
+  return (
+    <Section title={t('studentsTitle')} subtitle={t('studentsSub')}>
+      <div className="grid md:grid-cols-2 gap-4">
+        {students.map((s,i)=>(
+          <div key={i} className="p-4 border rounded-2xl">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold">{s.name}</h4>
+              <Badge>{s.year}</Badge>
+            </div>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{s.result}</p>
+            {s.proof && <a className="text-sm text-blue-600 hover:underline mt-2 inline-block" href={s.proof} target="_blank" rel="noreferrer">Подтверждение</a>}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function Projects({ t }){
+  const [tab, setTab] = useState('Все');
+  const [q, setQ] = useState('');
+
+  const cats = useMemo(() => ({
+    'Все': true,
+    'Методички': true,
+    'Разработки': true
+  }), []);
+
+  const filtered = useMemo(()=> {
+    return projects.filter(p => {
+      const byCat = tab==='Все' || p.cat === tab;
+      const qq = q.trim().toLowerCase();
+      const byQuery = !qq || p.title.toLowerCase().includes(qq) || p.desc.toLowerCase().includes(qq);
+      return byCat && byQuery;
+    });
+  }, [tab, q]);
+
+  return (
+    <Section title={t('projectsTitle')} subtitle={t('projectsSub')}>
+      <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-4">
+        <div className="flex gap-2 flex-wrap">
+          {Object.keys(cats).map(c => (
+            <button key={c} onClick={()=>setTab(c)} className={'px-3 py-1.5 rounded-full text-sm border ' + (tab===c ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-900 hover:bg-gray-50')}>
+              {c}
+            </button>
+          ))}
+        </div>
+        <input value={q} onChange={e=>setQ(e.target.value)} placeholder={t('searchPlaceholder')} className="w-full md:w-72 px-3 py-2 rounded-xl border bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600/30"/>
+      </div>
+      {filtered.length===0 ? (
+        <p className="text-sm text-gray-600 dark:text-gray-400">Ничего не найдено.</p>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(p => (
+            <a key={p.id} href={p.link} target="_blank" rel="noreferrer" className="group">
+              <div className="border rounded-2xl overflow-hidden hover:shadow-md transition p-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium line-clamp-1">{p.title}</h4>
+                  <Badge>{p.cat}</Badge>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{p.desc}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function Documents({ t }){
+  return (
+    <Section title={t('docsTitle')} subtitle={t('docsSub')}>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {documents.map(d => (
+          <a key={d.id} href={d.url} target="_blank" rel="noreferrer" className="p-4 border rounded-xl hover:shadow-sm transition flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg border flex items-center justify-center text-sm">{d.type === 'Сертификат' ? 'CERT' : 'PDF'}</div>
+            <div>
+              <h4 className="font-medium leading-snug">{d.title}</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{d.type}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function Media({ t }){
+  return (
+    <Section title={t('mediaTitle')} subtitle={t('mediaSub')}>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {media.map(m => (
+          <a key={m.id} href={m.url} target="_blank" rel="noreferrer" className="group">
+            <div className="border rounded-2xl overflow-hidden hover:shadow-md transition">
+              <div className="h-40 overflow-hidden">
+                <img src={m.thumb} alt={m.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition"/>
+              </div>
+              <div className="p-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium line-clamp-1">{m.title}</h4>
+                  <Badge>{m.kind}</Badge>
+                </div>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function Publications({ t }){
+  return (
+    <Section title={t('publicationsTitle')} subtitle={t('publicationsSub')}>
+      <div className="space-y-3">
+        {publications.map(p => (
+          <div key={p.id} className="p-4 border rounded-xl flex items-start justify-between gap-3">
+            <div>
+              <h4 className="font-semibold">{p.title}</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{p.outlet} • {p.year}</p>
+            </div>
+            <a className="text-blue-600 hover:underline text-sm" href={p.link} target="_blank" rel="noreferrer">Ссылка</a>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function Reviews({ t }){
+  return (
+    <Section title={t('reviewsTitle')} subtitle={t('reviewsSub')}>
+      <div className="grid md:grid-cols-2 gap-4">
+        {reviews.map(r => (
+          <div key={r.id} className="p-4 border rounded-2xl">
+            <p className="italic">“{r.text}”</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">— {r.author}</p>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function Grants({ t }){
+  return (
+    <Section title={t('grantsTitle')} subtitle={t('grantsSub')}>
+      <div className="space-y-3">
+        {grants.map(g => (
+          <div key={g.id} className="p-4 border rounded-xl">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold">{g.title}</h4>
+              <Badge>{g.year}</Badge>
+            </div>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{g.desc}</p>
+            {g.link && <a className="text-sm text-blue-600 hover:underline mt-2 inline-block" href={g.link} target="_blank" rel="noreferrer">Подробнее</a>}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function Press({ t }){
+  return (
+    <Section title={t('pressTitle')} subtitle={t('pressSub')}>
+      <div className="space-y-3">
+        {press.map(p => (
+          <div key={p.id} className="p-4 border rounded-xl flex items-start justify-between gap-3">
+            <div>
+              <h4 className="font-semibold">{p.title}</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{p.outlet}</p>
+            </div>
+            <a className="text-blue-600 hover:underline text-sm" href={p.link} target="_blank" rel="noreferrer">Ссылка</a>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function Contacts({ t }){
+  const [status, setStatus] = useState(null);
+  const FORM_ENDPOINT = 'https://formspree.io/f/YOUR_FORM_ID'; // замените
+
+  async function handleSubmit(e){
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    try {
+      const res = await fetch(FORM_ENDPOINT, { method:'POST', body:form, headers:{'Accept':'application/json'} });
+      if (res.ok) { setStatus('ok'); e.currentTarget.reset(); } else { setStatus('error'); }
+    } catch(e){ setStatus('error'); }
+  }
+
+  return (
+    <Section title={t('contacts.title')} subtitle={t('contacts.subtitle')}>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="p-4 border rounded-xl">
+          <h4 className="font-semibold">{t('contacts.details')}</h4>
+          <ul className="mt-3 space-y-1 text-sm">
+            <li>📍 {profile.location}</li>
+            <li>✉️ <a className="text-blue-600 hover:underline" href={'mailto:'+profile.email}>{profile.email}</a></li>
+            <li>☎️ <a className="text-blue-600 hover:underline" href={'tel:'+profile.phone}>{profile.phone}</a></li>
+          </ul>
+        </div>
+        <div className="p-4 border rounded-xl">
+          <h4 className="font-semibold">{t('contacts.formTitle')}</h4>
+          <form onSubmit={handleSubmit} className="mt-3 space-y-3">
+            <input name="name" required placeholder={t('contacts.name')} className="w-full px-3 py-2 rounded-xl border bg-white dark:bg-gray-900"/>
+            <input type="email" name="email" required placeholder={t('contacts.email')} className="w-full px-3 py-2 rounded-xl border bg-white dark:bg-gray-900"/>
+            <textarea name="message" required placeholder={t('contacts.message')} rows="4" className="w-full px-3 py-2 rounded-xl border bg-white dark:bg-gray-900"></textarea>
+            <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border bg-blue-600 text-white border-blue-600 hover:bg-blue-700" type="submit">{t('contacts.send')}</button>
+            {status==='ok' && <p className="text-green-600 text-sm">{t('contacts.sent')}</p>}
+            {status==='error' && <p className="text-red-600 text-sm">{t('contacts.error')}</p>}
+          </form>
+          <p className="text-xs text-gray-500 mt-2">{t('contacts.privacy')}</p>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+// ----- App Layout -----
+function AppRoot(){
+  const { t, lang, setLang } = useI18n();
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  useEffect(()=>{
+    if(theme==='dark'){ document.documentElement.classList.add('dark') } else { document.documentElement.classList.remove('dark') }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const NavItem = ({ to, children }) => (
+    <NavLink to={to} className={({isActive}) => 
+      "text-sm px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 " + (isActive ? "bg-gray-100 dark:bg-gray-800 font-semibold" : "")
+    }>{children}</NavLink>
+  );
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="sticky top-0 z-30 bg-white/90 dark:bg-gray-950/90 backdrop-blur border-b border-gray-200 dark:border-gray-800">
+        <div className="container py-3 flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <img src={profile.photoUrl} alt={profile.name} className="w-10 h-10 rounded-full object-cover border"/>
+            <div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('headerSubtitle')}</div>
+              <h1 className="text-base font-semibold leading-tight">{profile.name}</h1>
+            </div>
+          </div>
+          <nav className="ml-auto flex flex-wrap items-center gap-1">
+            <NavItem to="/">{t('nav.home')}</NavItem>
+            <NavItem to="/about">{t('nav.about')}</NavItem>
+            <NavItem to="/achievements">{t('nav.achievements')}</NavItem>
+            <NavItem to="/students">{t('nav.students')}</NavItem>
+            <NavItem to="/projects">{t('nav.projects')}</NavItem>
+            <NavItem to="/documents">{t('nav.documents')}</NavItem>
+            <NavItem to="/media">{t('nav.media')}</NavItem>
+            <NavItem to="/publications">{t('nav.publications')}</NavItem>
+            <NavItem to="/reviews">{t('nav.reviews')}</NavItem>
+            <NavItem to="/grants">{t('nav.grants')}</NavItem>
+            <NavItem to="/press">{t('nav.press')}</NavItem>
+            <NavItem to="/contacts">{t('nav.contacts')}</NavItem>
+          </nav>
+          <div className="flex items-center gap-2 ml-2">
+            <select className="text-sm border rounded-xl px-2 py-1 bg-white dark:bg-gray-900" value={lang} onChange={e=>setLang(e.target.value)}>
+              <option value="ru">RU</option>
+              <option value="kz">KZ</option>
+            </select>
+            <button onClick={()=> setTheme(theme==='dark'?'light':'dark')} className="text-sm px-3 py-1.5 rounded-xl border">
+              {theme==='dark' ? (dict[lang].theme.light) : (dict[lang].theme.dark)}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home t={t} />} />
+          <Route path="/about" element={<About t={t} />} />
+          <Route path="/achievements" element={<Achievements t={t} />} />
+          <Route path="/students" element={<Students t={t} />} />
+          <Route path="/projects" element={<Projects t={t} />} />
+          <Route path="/documents" element={<Documents t={t} />} />
+          <Route path="/media" element={<Media t={t} />} />
+          <Route path="/publications" element={<Publications t={t} />} />
+          <Route path="/reviews" element={<Reviews t={t} />} />
+          <Route path="/grants" element={<Grants t={t} />} />
+          <Route path="/press" element={<Press t={t} />} />
+          <Route path="/contacts" element={<Contacts t={t} />} />
+        </Routes>
+      </main>
+
+      <footer className="border-t border-gray-200 dark:border-gray-800">
+        <div className="container py-6 text-sm text-gray-600 dark:text-gray-400 flex flex-col md:flex-row items-center justify-between gap-3">
+          <p>© {new Date().getFullYear()} {profile.name}. {dict[lang].footer.rights}</p>
+          <p>{dict[lang].footer.tech}</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+// Mount
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <HashRouter>
+    <AppRoot/>
+  </HashRouter>
+);
+    </script>
+  </body>
+</html>
